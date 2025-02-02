@@ -1,12 +1,25 @@
-const isAuthenticated = (req, res, next) => {
-    const userId = req.header('userId');
+const User = require('../models/User');
 
+const isAuthenticated = async (req, res, next) => {
+    const userId = req.header('userId');
     if (!userId) {
         return res.status(401).json({ message: 'Unauthorized: Missing userId' });
     }
 
-    req.user = { id: userId };
+    const user = await User.findById(userId);
+    if (!user) {
+        return res.status(401).json({ message: 'Invalid user' });
+    }
+
+    req.user = user;
     next();
 };
 
-module.exports = { isAuthenticated };
+const isAdmin = (req, res, next) => {
+    if (!req.user.isAdmin) {
+        return res.status(403).json({ message: 'Access denied. Admins only.' });
+    }
+    next();
+};
+
+module.exports = { isAuthenticated, isAdmin };
