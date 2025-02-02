@@ -2,11 +2,13 @@ const mongoose = require('mongoose');
 
 const wagerSchema = new mongoose.Schema({
     creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    creatorStake: { type: Number, required: true }, // Creator's stake
+    creatorStake: { type: Number, required: true },
+    creatorOption: { type: String, enum: ['yes', 'no'], required: true }, // ✅ Yes/No option for creator
     participants: [
         {
             user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-            stake: { type: Number, required: true } // Each participant's stake
+            stake: { type: Number, required: true },
+            option: { type: String, enum: ['yes', 'no'], required: true } // ✅ Yes/No option for participants
         }
     ],
     condition: { type: String, required: true },
