@@ -4,20 +4,22 @@ const User = require('../models/User');
 // 1️⃣ Create Wager
 exports.createWager = async (req, res) => {
     const { amount, condition } = req.body;
-    const creatorId = req.user.id;
+    const userId = req.user.id;
 
     try {
-        const creator = await User.findById(creatorId);
-        if (creator.walletBalance < amount) {
+        const User = require('../models/User');
+        const user = await User.findById(userId);
+
+        if (user.walletBalance < amount) {
             return res.status(400).json({ message: 'Insufficient balance to create wager' });
         }
 
-        // Deduct stake from creator's wallet
-        creator.walletBalance -= amount;
-        await creator.save();
+        // Deduct the amount from the user's wallet
+        user.walletBalance -= amount;
+        await user.save();
 
         const wager = new Wager({
-            creator: creatorId,
+            creator: userId,
             creatorStake: amount,
             condition
         });
@@ -28,6 +30,7 @@ exports.createWager = async (req, res) => {
         res.status(500).json({ message: 'Failed to create wager', error: error.message });
     }
 };
+
 
 // 2️⃣ Join Wager
 exports.joinWager = async (req, res) => {
