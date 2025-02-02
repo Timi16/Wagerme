@@ -98,3 +98,12 @@ exports.declareOutcome = async (req, res) => {
         res.status(500).json({ message: 'Failed to declare outcome', error: error.message });
     }
 };
+
+exports.getAllWagers = async (req, res) => {
+    try {
+        const wagers = await Wager.find().populate('creator participants.user', 'name email');
+        res.status(200).json(wagers);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to fetch wagers', error: error.message });
+    }
+};
