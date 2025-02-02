@@ -30,6 +30,7 @@ exports.deposit = async (req, res) => {
 
 exports.verifyPayment = async (req, res) => {
     const reference = req.query.reference;
+    const userId = req.header('userId');  // Get the user's ID
 
     try {
         const response = await axios.get(
@@ -40,7 +41,16 @@ exports.verifyPayment = async (req, res) => {
         );
 
         if (response.data.data.status === 'success') {
-            return res.status(200).json({ message: 'Payment verified successfully', data: response.data.data });
+            const User = require('../models/User'); // Import the User model
+            const user = await User.findById(userId);
+
+            if (user) {
+                const amount = response.data.data.amount / 100; // Convert from kobo to NGN
+                user.walletBalance += amount;
+                await user.save();
+            }
+
+            return res.status(200).json({ message: 'Payment verified and wallet updated', data: response.data.data });
         }
 
         res.status(400).json({ message: 'Payment verification failed' });
@@ -48,6 +58,7 @@ exports.verifyPayment = async (req, res) => {
         res.status(500).json({ message: 'Verification error', error: error.message });
     }
 };
+
 
 exports.withdraw = async (req, res) => {
     const { amount, bank_code, account_number, email } = req.body;
