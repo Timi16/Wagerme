@@ -15,7 +15,10 @@ app.use(express.urlencoded({ extended: false }));
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
+const walletRoutes = require('./routes/walletRoutes');  // Add this line
+
 app.use('/api/auth', authRoutes);
+app.use('/api/wallet', walletRoutes);  // Add this line
 
 app.get("/", (req, res) => {
     res.send("WagerMe API is running...");
