@@ -1,14 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const wagerController = require('../controllers/wagerController'); // Make sure this is correct
+const wagerController = require('../controllers/wagerController'); // Ensure correct path
 
-const { isAuthenticated, isAdmin } = require('../middlewares/authMiddleware');
-
-// Check if wagerController is imported correctly
-router.post('/create', isAuthenticated, wagerController.createWager);
-router.post('/join', isAuthenticated, wagerController.joinWager);
-router.post('/declare', isAuthenticated, isAdmin, wagerController.declareOutcome);
-router.get('/all', isAuthenticated, wagerController.getAllWagers); // ⚠️ Likely the problematic line
+// ✅ Wager Routes
+router.post('/create', wagerController.createWager);
+router.post('/join', wagerController.joinWager);
+router.post('/declare', wagerController.declareOutcome);
+router.get('/all', wagerController.getAllWagers); // ✅ New route to get all wagers
 
 module.exports = router;
-
