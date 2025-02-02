@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 
 // Register User
 exports.register = async (req, res) => {
-    const { name, email, password, phone, dateOfBirth } = req.body;
+    const { name, username, email, password, phone, dateOfBirth } = req.body;
 
     try {
         const existingUser = await User.findOne({ email });
@@ -15,6 +15,7 @@ exports.register = async (req, res) => {
 
         const newUser = new User({
             name,
+            username, // Include the username
             email,
             password: hashedPassword,
             phone,
@@ -27,6 +28,7 @@ exports.register = async (req, res) => {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };
+
 
 // Login User
 exports.login = async (req, res) => {
