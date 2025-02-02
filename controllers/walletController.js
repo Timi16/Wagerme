@@ -1,4 +1,47 @@
+const User = require('../models/User');
 const axios = require('axios');
+
+exports.verifyPayment = async (req, res) => {
+    const reference = req.query.reference;
+    const userId = req.header('userId');
+
+    try {
+        const response = await axios.get(
+            `https://api.paystack.co/transaction/verify/${reference}`,
+            {
+                headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` }
+            }
+        );
+
+        const paymentData = response.data.data;
+
+        if (paymentData.status === 'success') {
+            // ✅ Correctly find the user
+            const user = await User.findById(userId);
+
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            // 💰 Update wallet balance WITHOUT triggering full validation
+            await User.updateOne(
+                { _id: userId },
+                { $inc: { walletBalance: paymentData.amount / 100 } }, // Add the amount
+                { runValidators: false } // 🚩 Skip validation
+            );
+
+            return res.status(200).json({
+                message: 'Payment verified and wallet updated',
+                data: paymentData
+            });
+        }
+
+        res.status(400).json({ message: 'Payment verification failed' });
+    } catch (error) {
+        console.error("Error details:", error);
+        res.status(500).json({ message: 'Verification error', error: error.message });
+    }
+};
 
 exports.deposit = async (req, res) => {
     const { amount, email } = req.body;
@@ -28,36 +71,6 @@ exports.deposit = async (req, res) => {
     }
 };
 
-exports.verifyPayment = async (req, res) => {
-    const reference = req.query.reference;
-    const userId = req.header('userId');  // Get the user's ID
-
-    try {
-        const response = await axios.get(
-            `https://api.paystack.co/transaction/verify/${reference}`,
-            {
-                headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` }
-            }
-        );
-
-        if (response.data.data.status === 'success') {
-            const User = require('../models/User'); // Import the User model
-            const user = await User.findById(userId);
-
-            if (user) {
-                const amount = response.data.data.amount / 100; // Convert from kobo to NGN
-                user.walletBalance += amount;
-                await user.save();
-            }
-
-            return res.status(200).json({ message: 'Payment verified and wallet updated', data: response.data.data });
-        }
-
-        res.status(400).json({ message: 'Payment verification failed' });
-    } catch (error) {
-        res.status(500).json({ message: 'Verification error', error: error.message });
-    }
-};
 
 
 exports.withdraw = async (req, res) => {
