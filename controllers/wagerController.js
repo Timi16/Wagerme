@@ -121,3 +121,42 @@ exports.getAllWagers = async (req, res) => {
         res.status(500).json({ message: 'Failed to fetch wagers', error: error.message });
     }
 };
+
+// ✅ Get a Single Wager by ID
+exports.getWagerById = async (req, res) => {
+    try {
+        const wager = await Wager.findById(req.params.wagerId).populate('creator participants.user', 'username walletBalance');
+        if (!wager) return res.status(404).json({ message: 'Wager not found' });
+        res.status(200).json({ message: 'Wager details fetched successfully', wager });
+    } catch (error) {
+        console.error('Get Wager Error:', error);
+        res.status(500).json({ message: 'Failed to fetch wager', error: error.message });
+    }
+};
+
+// ✅ Cancel Wager (Only by Creator)
+exports.cancelWager = async (req, res) => {
+    const { wagerId } = req.body;
+    const userId = req.header('userId');
+
+    try {
+        const wager = await Wager.findById(wagerId);
+        if (!wager) return res.status(404).json({ message: 'Wager not found' });
+
+        if (String(wager.creator) !== userId) {
+            return res.status(403).json({ message: 'Only the creator can cancel this wager' });
+        }
+
+        if (wager.participants.length > 0) {
+            return res.status(400).json({ message: 'Cannot cancel a wager once a participant has joined' });
+        }
+
+        await Wager.deleteOne({ _id: wagerId });
+        await User.updateOne({ _id: userId }, { $inc: { walletBalance: wager.creatorStake } }, { runValidators: false });
+
+        res.status(200).json({ message: 'Wager cancelled successfully' });
+    } catch (error) {
+        console.error('Cancel Wager Error:', error);
+        res.status(500).json({ message: 'Failed to cancel wager', error: error.message });
+    }
+};
